@@ -1,8 +1,10 @@
 import asyncio
+import time
+
 from pyrogram import Client, errors
 import os
-api_id = 9411854
-api_hash = '499c76606cefdeadd4b1ece84a5a9932'
+api_id = 21209538
+api_hash = '3c6738da90c65acb56f315bfa11e866e'
 app = Client('my_account', api_id=api_id, api_hash=api_hash)
 
 def get_messages():
@@ -16,6 +18,7 @@ def get_messages():
         post_number = msg.split('/')[-1]
         channel_link = msg.split('/')[1]
         messages[i] = tuple([channel_link,int(post_number)])
+    print(f'Собрано сообщений для пересылки: {len(messages)}')
     return messages
 
 def get_Xchannels():
@@ -27,6 +30,7 @@ def get_Xchannels():
     for i in range(len(channel_ids)):
         channel_ids[i] = channel_ids[i].replace('https://', '')
         channel_ids[i] = [channel_ids[i].rstrip().split('/')[-1], 0]
+    print(f'Собрано каналов для пересылки: {len(channel_ids)}')
     return channel_ids
 
 async def main():
@@ -42,10 +46,10 @@ async def main():
     #Рассылка по каналам по порядку
     while channels_to_forward and messages_for_forwarding:
         message_i = messages_for_forwarding.pop()
-        print(message_i[0], message_i[1])
         try:
             await app.forward_messages(channels_to_forward[-1][0],from_chat_id=message_i[0], message_ids=message_i[1])
             channels_to_forward[ -1 ][ 1 ] += 1
+            time.sleep(4)
         except errors.exceptions.bad_request_400.MessageIdInvalid:
             print(f'Не найдено сообщение по ссылке t.me/{message_i[0]}/{message_i[1]}')
         if channels_to_forward[-1][1] ==17:
