@@ -1,12 +1,14 @@
 import asyncio
 import time
+from os import listdir
 
 from pyrogram import Client, errors
 import os
+from os.path import isfile, join
 api_id = 21209538
 api_hash = '3c6738da90c65acb56f315bfa11e866e'
-app = Client('my_account', api_id=api_id, api_hash=api_hash)
-
+files = sorted([f for f in listdir('sessions') if isfile(f'sessions/{f}')])
+#сессии будут браться в алфавитном порядке, ссылки на сообщения - по порядку
 def get_messages():
     if not os.path.exists('messages_ids.txt'):
         print('Не найден файл messages_ids.txt')
@@ -19,7 +21,7 @@ def get_messages():
         channel_link = msg.split('/')[1]
         messages[i] = tuple([channel_link,int(post_number)])
     print(f'Собрано сообщений для пересылки: {len(messages)}')
-    return messages
+    return messages[::-1]
 
 def get_Xchannels():
     if not os.path.exists('Xchannels_ids.txt'):
@@ -34,7 +36,6 @@ def get_Xchannels():
     return channel_ids
 
 async def main():
-    await app.start()
     messages_for_forwarding = get_messages()
     channels_to_forward = get_Xchannels()
     if not messages_for_forwarding:
@@ -43,17 +44,31 @@ async def main():
     elif not channels_to_forward:
         print('Ошибка, не получены каналы для пересылки')
         return False
-    #Рассылка по каналам по порядку
-    while channels_to_forward and messages_for_forwarding:
-        message_i = messages_for_forwarding.pop()
-        try:
-            await app.forward_messages(channels_to_forward[-1][0],from_chat_id=message_i[0], message_ids=message_i[1])
-            channels_to_forward[ -1 ][ 1 ] += 1
-            time.sleep(4)
-        except errors.exceptions.bad_request_400.MessageIdInvalid:
-            print(f'Не найдено сообщение по ссылке t.me/{message_i[0]}/{message_i[1]}')
-        if channels_to_forward[-1][1] ==17:
-            channels_to_forward.pop()
+    while True:
+        limit = input('Введите лимит запрсов на один аккаунт: ')
+        if limit.isdigit():
+            limit = int(limit)
+            break
+        else:
+            print('Введённое значение не является числом.')
+    while files:
+        session = files.pop()
+        print(f'Активная сессия: {session}')
+        app = Client(session, api_id= api_id, api_hash=api_hash)
+        await app.start()
+        cur_limit = 0
+        while cur_limit < limit:
+            cur_limit += 1
+            while channels_to_forward and messages_for_forwarding:
+                message_i = messages_for_forwarding.pop()
+                try:
+                    await app.forward_messages(channels_to_forward[-1][0],from_chat_id=message_i[0], message_ids=message_i[1])
+                    channels_to_forward[ -1 ][ 1 ] += 1
+                    time.sleep(4)
+                except errors.exceptions.bad_request_400.MessageIdInvalid:
+                    print(f'Не найдено сообщение по ссылке t.me/{message_i[0]}/{message_i[1]}')
+                if channels_to_forward[-1][1] ==17:
+                    channels_to_forward.pop()
 
     #Рассылка по каналам равномерно
     # while channels_to_forward:
