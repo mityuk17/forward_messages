@@ -5,8 +5,8 @@ from os import listdir
 from pyrogram import Client, errors
 import os
 from os.path import isfile, join
-api_id = 21209538
-api_hash = '3c6738da90c65acb56f315bfa11e866e'
+api_id = 0
+api_hash = ''
 files = sorted([f for f in listdir('sessions') if isfile(f'sessions/{f}')])
 #сессии будут браться в алфавитном порядке, ссылки на сообщения - по порядку
 def get_messages():
